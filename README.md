@@ -42,4 +42,4 @@
     + 인공지능 모델 설계, DB 설계
 
 - 더 자세한 정보
-  * [최종 보고서](https://github.com/ckdgus0505/Naul/tree/master/Documents/Report.pdf)
+  * [최종 보고서](https://github.com/ckdgus0505/Naul/blob/master/Documents/Report.pdf)
