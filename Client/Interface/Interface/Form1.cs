@@ -11,6 +11,7 @@ using OpenCvSharp;
 using System.Net;
 using System.Net.Sockets;
 using MySql.Data.MySqlClient;
+using System.Threading;
 
 namespace Interface
 {
@@ -21,7 +22,7 @@ namespace Interface
         string IP = "175.214.125.27";
         Int32 PORT = 9009;
         bool checking = false; // 사람이 인식되고 있음을 나타내는 변수
-
+  
 
 
         IplImage haarface;
@@ -30,49 +31,12 @@ namespace Interface
         public Form1()
         {
             InitializeComponent();
-            //updateDataGridView();
-            DBConnection();
-        }
-
-
-
-        private void ListBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void Panel1_Paint(object sender, PaintEventArgs e)
-        {
-
         }
 
 
         private void DataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
 
-        }
-
-        private void updateDataGridView()
-        {
-            //string[] row0 = { "01", "아몰랑" };
-            //dataGridView1.Rows.Add(row0);
-            //dataGridView1.Rows.Add("02", "정창현", true);
-            //dataGridView1.Rows.Add("03", "창");
-            //dataGridView1.Rows.Add("04", "현");
-            //dataGridView1.Rows.Add("05", "이");
-            //dataGridView1.Rows.Add("06", "동");
-            //dataGridView1.Rows.Add("07", "석");
-            //dataGridView1.Rows.Add("08", "임");
-            //dataGridView1.Rows.Add("09", "상");
-            //dataGridView1.Rows.Add("10", "균");
-            //dataGridView1.Rows.Add("11", "박");
-            //dataGridView1.Rows.Add("12", "현");
-            //dataGridView1.Rows.Add("13", "준");
-            //dataGridView1.Rows.Add("14", "오");
-            //dataGridView1.Rows.Add("15", "현");
-            //dataGridView1.Rows.Add("16", "우");
-            //dataGridView1.Rows.Add("17", "임");
-            //dataGridView1.Rows.Add("18", "현");
         }
 
         private void Timer1_Tick(object sender, EventArgs e)
@@ -105,27 +69,31 @@ namespace Interface
 
         private void Btn_att_start_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("출석을 시작합니다.");
+            DBConnection();
             camera_On();
+            MessageBox.Show("출석을 시작합니다.");
             timer1.Enabled = true;
-
-
-
 
         }
 
         private void Btn_spk_start_Click(object sender, EventArgs e)
         {
+            String query = "SELECT * FROM ai.client_table;";
             MessageBox.Show("출석을 시작합니다.");
             DBConnection();
+
+            String studentID = "201511061";
 
         }
 
         private void Btn_att_end_Click(object sender, EventArgs e)
         {
-
+            src = null;
             timer1.Enabled = false;
-            // while(true)
+
+
+
+            // while()
             //{
             //    send_number();
             //}
@@ -184,6 +152,7 @@ namespace Interface
         }
 
 
+
         private void send_picture() // 사진을 보내서 해당하는 학번을 받음
         {
             int length = 0;
@@ -194,19 +163,31 @@ namespace Interface
                 byte[] pic = src.ToBytes(".jpg");
 
                 sock.Send(pic);
-
                 length = sock.Receive(receive);
 
+                String studentID = Encoding.UTF8.GetString(receive);
 
-                MessageBox.Show(Encoding.UTF8.GetString(receive));
-
-                if(Encoding.UTF8.GetString(receive) == "undefined") // 사람 인식 못함
+                if(studentID == "Undefined") // 사람 인식 못함
                 {
                     checking = false;
                 }
                 else // 사람 인식 함
                 {
+                    if (MessageBox.Show(studentID + " 출석 하시겠습니까?", "", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    {
 
+                        String query = "UPDATE ai.client_table SET attend = 1 WHERE studentID = '" + studentID  + "';";
+                        DBupdate(query);
+                        DBConnection();
+                        
+                        MessageBox.Show("출석처리되었습니다.");
+                        Thread.Sleep(1000);
+                        checking = false;
+                    }
+                    else
+                    {
+                        checking = false;
+                    }
 
                 }
             }
@@ -217,7 +198,7 @@ namespace Interface
 
             finally
             {
-                sock.Close();
+                 sock.Close();
             }
 
         }
@@ -231,26 +212,46 @@ namespace Interface
             Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
             //3. 접속(전화걸기)
+            
             sock.Connect(endPoint);
-
 
             return sock;
         }
-        private void DBConnection()
+
+        private void DBupdate(String query)
         {
             string constring = "datasource=isg1031.iptime.org;port=20050;username=aitester;password=aitester001!";
             MySqlConnection connection = new MySqlConnection(constring);
+            MySqlCommand cmdDataBase = new MySqlCommand(query, connection);
+            try
+            {
+                connection.Open();
+                cmdDataBase.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            connection.Close();
+        }
+        private void DBConnection()
+        {
+            String query = "SELECT * FROM ai.client_table;";
+            string constring = "datasource=isg1031.iptime.org;port=20050;username=aitester;password=aitester001!";
+            MySqlConnection connection = new MySqlConnection(constring);
 
-            MySqlCommand cmdDataBase = new MySqlCommand(" SELECT * FROM ai.client_table  ;", connection);
+            MySqlCommand cmdDataBase = new MySqlCommand(query, connection);
 
             try
             {
+                
+                
                 MySqlDataAdapter sda = new MySqlDataAdapter();
                 sda.SelectCommand = cmdDataBase;
                 DataTable dbdataset = new DataTable();
+
                 sda.Fill(dbdataset);
                 BindingSource BSource = new BindingSource();
-
                 BSource.DataSource = dbdataset;
                 dataGridView1.DataSource = BSource;
                 sda.Update(dbdataset);
@@ -261,17 +262,6 @@ namespace Interface
             }           
             connection.Close();
         }
-
-        private void SendPIC()
-        {
-        }
-
-        private void SendNum()
-        {
-        }
-
-        private void SendClass()
-        { }
 
         public IplImage FaceDetection(IplImage src)
         { // https://076923.github.io/posts/C-opencv-29/
@@ -299,7 +289,7 @@ namespace Interface
                     if (faces.Total == 1 && checking == false)
                     {
                         checking = true;
-                        MessageBox.Show("인식?"); //send_picture();
+                        send_picture();
     
                     }
                     for (int i = 0; i < faces.Total; i++)
@@ -317,32 +307,6 @@ namespace Interface
 
                 return haarface;
             }
-        }
-
-
-        public void loadDataGridView()
-        {
-            string constring = "datasource=localhost;port=3306;username=root;password=mimo";
-            MySqlConnection conDataBase = new MySqlConnection(constring);
-            MySqlCommand cmdDataBase = new MySqlCommand(" select * from database.edata ;", conDataBase); // edata :db 이름
-
-            try
-            {
-                MySqlDataAdapter sda = new MySqlDataAdapter();
-                sda.SelectCommand = cmdDataBase;
-                DataTable dbdataset = new DataTable();
-                sda.Fill(dbdataset);
-                BindingSource BSource = new BindingSource();
-
-                BSource.DataSource = dbdataset;
-                dataGridView1.DataSource = BSource;
-                sda.Update(dbdataset);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-
         }
     }
 }
