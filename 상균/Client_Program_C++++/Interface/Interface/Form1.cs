@@ -180,11 +180,11 @@ namespace Interface
         private Socket connection()
         {
             //1. 접속할 종단점(서버측 소켓)생성
-            IPAddress ip = Dns.GetHostAddresses("isg1031.iptime.org")[0];//인자값 : 서버측 IP
+            IPAddress ip1 = Dns.GetHostAddresses("isg1031.iptime.org")[0];//인자값 : 서버측 IP
             IPAddress ip2 = IPAddress.Parse("127.0.0.1");
             IPAddress ip3 = IPAddress.Parse("36.39.21.137");
             Int32 PORT = 20060;
-            IPEndPoint endPoint = new IPEndPoint(ip3, PORT);//인자값 : IPAddress,포트번호
+            IPEndPoint endPoint = new IPEndPoint(ip1, PORT);//인자값 : IPAddress,포트번호
 
             //2. Tcp Socket 생성
             Socket sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
